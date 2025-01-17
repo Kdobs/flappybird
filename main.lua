@@ -12,17 +12,25 @@ function love.load()
     love.graphics.setBackgroundColor(.14, .36, .46) -- light blue 
     love.window.setMode(0,0)
     Width, Height = love.graphics.getDimensions( )
+    
+    CurrentPipes = {} -- this tabel will hold all of the pipes 
+
 end
 function love.update(dt)
     Bird.yVel = Bird.yVel + (516 * dt)
     Bird.y = Bird.y + (Bird.yVel * dt)
+    local pipe = PipeGenerator()
+    
+
+
     love.reset()
 end
 
 function love.draw()
     love.graphics.setColor(255, 255, 0)
     love.graphics.circle("fill", 250, Bird.y, 25)
-    love.graphics.rectangle("fill",Width - 500, Height - 500, 200, Height /2 )
+    
+    love.graphics.rectangle("fill",Width-500, 0, 200, Height /2 )
 end
 
 function love.keypressed(key)
@@ -38,22 +46,29 @@ end
 
 function PipeGenerator()
     -- this function will create a pipe object with the randomized position
-    local pipe = {}
+    local pipeTop = {}
+    local pipeBottom = {}
     local positon = math.random(3) -- random number between 1 and 3 for high middle and low position
     if positon == 1 then -- high position
-        pipe.x = 0
-        pipe.y = 0
+        pipeTop.x = Width
+        pipeTop.y = Height / 4
+        pipeBottom.x = Width
+        pipeBottom.y = Height / 2
 
     elseif positon == 2 then -- middle position
-        pipe.x = 0
-        pipe.y = 0
+        pipeTop.x = Width
+        pipeTop.y =  Height / 3
+        pipeBottom.x = Width
+        pipeBottom.y = Height / 3
 
     else -- low position
-        pipe.x = 0
-        pipe.y = 0
-        
+        pipeTop.x = Width
+        pipeTop.y = Height / 2
+        pipeBottom.x = Width
+        pipeBottom.y = Height / 4
+
     end
-    return pipe
+    return pipeTop, pipeBottom
 end
 
 function love.reset()
@@ -63,3 +78,40 @@ function love.reset()
         Bird.yVel = 0
     end
 end
+
+--need to implement a queue for pipe managment
+    -- from the lua website  https://www.lua.org/pil/11.4.html
+    List = {}
+    function List.new ()
+      return {first = 0, last = -1}
+    end
+
+    function List.pushleft (list, value)
+        local first = list.first - 1
+        list.first = first
+        list[first] = value
+      end
+      
+      function List.pushright (list, value)
+        local last = list.last + 1
+        list.last = last
+        list[last] = value
+      end
+      
+      function List.popleft (list)
+        local first = list.first
+        if first > list.last then error("list is empty") end
+        local value = list[first]
+        list[first] = nil        -- to allow garbage collection
+        list.first = first + 1
+        return value
+      end
+      
+      function List.popright (list)
+        local last = list.last
+        if list.first > last then error("list is empty") end
+        local value = list[last]
+        list[last] = nil         -- to allow garbage collection
+        list.last = last - 1
+        return value
+      end
