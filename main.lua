@@ -5,10 +5,14 @@
 -- rectangels need at least 100 pixels of gap 
 -- might be easier to create one pipe object then draw both the upper and lower pipe from the frist pipe position
 
+-- the pipe for the top need to be x =0 and the height needs to be negative io think
+
+
 function love.load()
     Bird = {}
     Bird.y = 200
     Bird.x = 300
+    Bird.width = 25
     Bird.yVel = 0 
     love.graphics.setBackgroundColor(.14, .36, .46) -- light blue 
     love.window.setMode(0,0)
@@ -21,6 +25,7 @@ function love.update(dt)
     Bird.yVel = Bird.yVel + (516 * dt)
     Bird.y = Bird.y + (Bird.yVel * dt)
     Timer = Timer + dt
+    Outofbounds()
     
     if ActivePipes < 4 and Timer >= 4 then --should trigger every 5 seconds
         Timer = 0 --reset timer    
@@ -37,6 +42,7 @@ function love.update(dt)
             if currentpipe.x >= -175 then --only puts the pipe back in the queue if it is on the screen should be destroyed by the garbage collector
                 currentpipe.x = currentpipe.x - 1
                 currentpipe.x2 = currentpipe.x2 - 1
+                Hitdetection(currentpipe)
                 List.pushright(PipeQueue, currentpipe)
             else
                 ActivePipes = ActivePipes -1
@@ -44,21 +50,20 @@ function love.update(dt)
         end
     end
     
-    love.reset()
 end
 
 function love.draw()
+    --drawing the bird
     love.graphics.setColor(255, 255, 0)
-    love.graphics.circle("fill", 250, Bird.y, 25)
+    love.graphics.circle("fill", Bird.x, Bird.y, Bird.width) --draw the bird
+    -- draw the pipes
     for i = 1, ActivePipes do
         local currentpipe = List.popleft(PipeQueue)
-        love.graphics.rectangle("fill", currentpipe.x, currentpipe.y, 175, currentpipe.y) -- top pipe or x,y
-        love.graphics.rectangle("fill", currentpipe.x2, currentpipe.y2, 175, currentpipe.y2) -- bottom pipe or x2,y2
+        love.graphics.rectangle("fill", currentpipe.x, currentpipe.y, currentpipe.width, currentpipe.height) -- top pipe or x,y
+        love.graphics.rectangle("fill", currentpipe.x2, currentpipe.y2, currentpipe.width2, currentpipe.height2) -- bottom pipe or x2,y2
         List.pushright(PipeQueue, currentpipe)
     end
     love.graphics.print(ActivePipes,100, 100)
-    
-
 end
 
 function love.keypressed(key)
@@ -76,57 +81,89 @@ function PipeGenerator()
     -- this function will create a pipe object with the randomized position
     local newpipe = {}
     local pipewidth = 175 -- final pipe width
+    -- local positon = 1 -- testing positions
     local positon = math.random(3) -- random number between 1 and 3 for high middle and low position
-    -- x, y top pipe and x2,y2 are bottom pipes
+    local pipegap = 150 -- pixel gap between the pipes
+    local offset  = 150 -- offset for the high and low pipes
+
+    -- x, y top pipe and x2, y2 are bottom pipes
     if positon == 1 then -- high position
-        newpipe.x = Width       
-        newpipe.y = Height / 2
+        --top pipe
+        newpipe.x = Width
+        newpipe.y = 0
         newpipe.width = pipewidth
-        newpipe.height = 200
+        newpipe.height = Height / 2 - pipegap - offset
+        --bottom pipe
         newpipe.x2 = Width
-        newpipe.y2 = Height / 2
-        newpipe.widht2 = pipewidth
-        newpipe.height2 = 200
+        newpipe.y2 = Height / 2 - offset
+        newpipe.width2 = pipewidth
+        newpipe.height2 = Height / 2 + offset
 
     elseif positon == 2 then -- middle position
+        --top pipe
         newpipe.x = Width
-        newpipe.y = Height / 3
+        newpipe.y = 0
         newpipe.width = pipewidth
-        newpipe.height = 200
+        newpipe.height = Height / 2 - pipegap /2
+        --bottom pipe
         newpipe.x2 = Width
-        newpipe.y2 = Height / 3
-        newpipe.widht2 = pipewidth
-        newpipe.height2 = 200
+        newpipe.y2 = Height / 2 + 75
+        newpipe.width2 = pipewidth
+        newpipe.height2 = Height / 2 + pipegap/2
 
     else -- low position
+        --top pipe
         newpipe.x = Width
-        newpipe.y = Height / 4
+        newpipe.y = 0
         newpipe.width = pipewidth
-        newpipe.height = 200
+        newpipe.height = Height / 2 + offset
+        --bottom pipe
         newpipe.x2 = Width
-        newpipe.y2 = Height / 2
-        newpipe.widht2 = pipewidth
-        newpipe.height2 = 200
+        newpipe.y2 = Height / 2 + pipegap + offset
+        newpipe.width2 = pipewidth
+        newpipe.height2 = Height/ 2 + pipegap + offset
         
     end
     return newpipe
 end
 
 function love.reset()
-    -- resets the bird if it falls off the screen will also need to add rest if it hits the pipes
-    if Bird.y < 0 or Bird.y > 1080 then
-        Bird.y = 200
-        Bird.yVel = 0
+    -- resets the bird and the pipes
+    bird.y = 200
+    bird.yVel = 0
+    for i =1, ActivePipes do
+        List.popleft(ActivePipes) --get rid of all active pipes on screen
     end
-
-        
-
 end
 
+function Hitdetection(pipe)
+    --this function detects when the bird hits a pipe
+    -- need to check the bounds of the current pipes within a radius of the bird (bird width = 25)
+    -- check the top pipe
+    if(pipe.x > Bird.x and pipe.x + pipe.width < Bird.x)then
+        if(pipe.y > Bird.y and pipe.y + pipe.height < Bird.y) then
+            Hit()
+        end
+    end  
+    -- check the bottom pipe
+    if(pipe.x > Bird.x and pipe.x + pipe.width2 < Bird.x)then
+        if(pipe.y > Bird.y and pipe.y + pipe.height2 < Bird.y) then
+            hit()
+        end
+    end  
+end
 
+function hit()
+    --call when the bird hits a pipe
+    reset()
+end
 
-
-
+function Outofbounds()
+    -- checks if the bird is out of bounds
+    if Bird.y < 0 or Bird.y > 1080 then
+        reset()
+    end 
+end
 
 --need to implement a queue for pipe managment
     -- from the lua website  https://www.lua.org/pil/11.4.html
