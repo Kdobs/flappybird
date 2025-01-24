@@ -1,11 +1,8 @@
----@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-global --vs code does not like the love funcitons
 -- 0, 0 is the top left kinda makes things invereted for y(not cool)
 -- must save before anything takes effect when running using alt L
-
--- rectangels need at least 100 pixels of gap 
+ 
 -- might be easier to create one pipe object then draw both the upper and lower pipe from the frist pipe position
-
--- the pipe for the top need to be x =0 and the height needs to be negative io think
 
 
 function love.load()
@@ -14,6 +11,7 @@ function love.load()
     Bird.x = 300
     Bird.width = 25
     Bird.yVel = 0 
+    Score = 0
     love.graphics.setBackgroundColor(.14, .36, .46) -- light blue 
     love.window.setMode(0,0)
     Width, Height = love.graphics.getDimensions( )
@@ -21,7 +19,13 @@ function love.load()
     PipeQueue = List.new() -- creates a queue push to the right pop from the left
     Timer = 4 -- needed for timeing the pipes
 end
+local Pause = false
 function love.update(dt)
+    if Pause then --prevents the update fucntion from running to pause the game 
+        -- put pause menu here
+        return 
+        end  
+
     Bird.yVel = Bird.yVel + (516 * dt)
     Bird.y = Bird.y + (Bird.yVel * dt)
     Timer = Timer + dt
@@ -34,19 +38,23 @@ function love.update(dt)
         ActivePipes = ActivePipes + 1
         
     end
+    
     if (ActivePipes > 0) then
         -- need to loop through the queue to move the pipes, remove pipes 
         for i = 1, ActivePipes do
             -- takes a pipe out of the queue moves it and stores it again
             local currentpipe = List.popleft(PipeQueue)
+            Hitdetection(currentpipe) -- check for hit detection
             if currentpipe.x >= -175 then --only puts the pipe back in the queue if it is on the screen should be destroyed by the garbage collector
                 currentpipe.x = currentpipe.x - 1
                 currentpipe.x2 = currentpipe.x2 - 1
-                Hitdetection(currentpipe)
+                
                 List.pushright(PipeQueue, currentpipe)
             else
                 ActivePipes = ActivePipes -1
+                Score = Score + 1
             end
+            
         end
     end
     
@@ -63,17 +71,24 @@ function love.draw()
         love.graphics.rectangle("fill", currentpipe.x2, currentpipe.y2, currentpipe.width2, currentpipe.height2) -- bottom pipe or x2,y2
         List.pushright(PipeQueue, currentpipe)
     end
-    love.graphics.print(ActivePipes,100, 100)
+    love.graphics.print(Score,100, 100, 0, 2,2)
 end
 
 function love.keypressed(key)
-    if key == "w" then
+    if key == "w" then -- jump
         if Bird.y > 0 then 
             Bird.yVel = -165
         end
     end
-    if key == "e" then
-        love.window.close()
+    if key == "e" then --exit
+        love.event.quit()
+    end
+    if key == "p" then 
+        Pause = not Pause
+        
+    end
+    if key == "r" then
+        Reset()
     end
 end
 
@@ -122,46 +137,42 @@ function PipeGenerator()
         newpipe.y2 = Height / 2 + pipegap + offset
         newpipe.width2 = pipewidth
         newpipe.height2 = Height/ 2 + pipegap + offset
-        
     end
     return newpipe
 end
 
-function love.reset()
-    -- resets the bird and the pipes
-    bird.y = 200
-    bird.yVel = 0
-    for i =1, ActivePipes do
-        List.popleft(ActivePipes) --get rid of all active pipes on screen
-    end
+function Reset()
+    love.event.quit("restart") -- reset the game state 
 end
 
 function Hitdetection(pipe)
     --this function detects when the bird hits a pipe
     -- need to check the bounds of the current pipes within a radius of the bird (bird width = 25)
     -- check the top pipe
-    if(pipe.x > Bird.x and pipe.x + pipe.width < Bird.x)then
-        if(pipe.y > Bird.y and pipe.y + pipe.height < Bird.y) then
+    if(pipe.x < Bird.x and pipe.x + pipe.width > Bird.x)then
+        if(pipe.y < Bird.y and pipe.y + pipe.height > Bird.y) then
             Hit()
         end
     end  
     -- check the bottom pipe
-    if(pipe.x > Bird.x and pipe.x + pipe.width2 < Bird.x)then
-        if(pipe.y > Bird.y and pipe.y + pipe.height2 < Bird.y) then
-            hit()
+    if(pipe.x2 < Bird.x and pipe.x2 + pipe.width2 > Bird.x)then
+        if(pipe.y2 < Bird.y and pipe.y2 + pipe.height2 > Bird.y) then
+            Hit()
         end
     end  
 end
 
-function hit()
+function Hit()
     --call when the bird hits a pipe
-    reset()
+    --print("Hit detected")
+    Reset()
 end
 
 function Outofbounds()
     -- checks if the bird is out of bounds
-    if Bird.y < 0 or Bird.y > 1080 then
-        reset()
+    if Bird.y < 0 or Bird.y > Height then
+        --print("out of bounds")
+        Reset()
     end 
 end
 
