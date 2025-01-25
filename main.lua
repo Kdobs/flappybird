@@ -147,16 +147,15 @@ end
 
 function Hitdetection(pipe)
     --this function detects when the bird hits a pipe
-    -- need to check the bounds of the current pipes within a radius of the bird (bird width = 25)
     -- check the top pipe
-    if(pipe.x < Bird.x and pipe.x + pipe.width > Bird.x)then
-        if(pipe.y < Bird.y and pipe.y + pipe.height > Bird.y) then
+    if(pipe.x < Bird.x + Bird.width and pipe.x + pipe.width > Bird.x - Bird.width)then
+        if(pipe.y < Bird.y and pipe.y + pipe.height > Bird.y  - Bird.width) then
             Hit()
         end
     end  
     -- check the bottom pipe
-    if(pipe.x2 < Bird.x and pipe.x2 + pipe.width2 > Bird.x)then
-        if(pipe.y2 < Bird.y and pipe.y2 + pipe.height2 > Bird.y) then
+    if(pipe.x2 < Bird.x + Bird.width and pipe.x2 + pipe.width2 > Bird.x - Bird.width)then
+        if(pipe.y2 < Bird.y + Bird.width and pipe.y2 + pipe.height2 > Bird.y + Bird.width) then
             Hit()
         end
     end  
